@@ -1,0 +1,126 @@
+1. 论文中的概念示例：
+1) dialogueAct: alarm, email，相当于场景/领域(domain)
+2) frame: query, volume_mute, 相当于intent
+3) frame elements: date, timeofday, 相当于槽(slot)
+4) span: 区域
+
+2. NLU benchmark数据转换
+(1) 转换为XML格式的文件，其中pos为词性，lemma为词性还原
+1) 运行命令：python nfold_converters.py ../NLU-Evaluation-Data/CrossValidation/autoGeneFromRealAnno/autoGene_2018_03_22-13_01_25_169/CrossValidation -o ../datasets/nlu_benchmark_hrc2
+2) 保存后的格式
+<?xml version="1.0" encoding="UTF-8"?>
+<example id="0_a11472">
+   <sentence>is there any stopped traffic on route eighty today</sentence>
+   <tokens>
+      <token id="1" lemma="be" pos="VERB" surface="is"/>
+      <token id="2" lemma="there" pos="ADV" surface="there"/>
+      <token id="3" lemma="any" pos="DET" surface="any"/>
+      <token id="4" lemma="stop" pos="VERB" surface="stopped"/>
+      <token id="5" lemma="traffic" pos="NOUN" surface="traffic"/>
+      <token id="6" lemma="on" pos="ADP" surface="on"/>
+      <token id="7" lemma="route" pos="NOUN" surface="route"/>
+      <token id="8" lemma="eighty" pos="NUM" surface="eighty"/>
+      <token id="9" lemma="today" pos="NOUN" surface="today"/>
+   </tokens>
+   <semantics>
+      <ner>
+         <token id="8" value="B-CARDINAL"/>
+         <token id="9" value="B-DATE"/>
+      </ner>
+      <dialogueAct>
+         <token id="1" value="B-transport"/>
+         <token id="2" value="I-transport"/>
+         <token id="3" value="I-transport"/>
+         <token id="4" value="I-transport"/>
+         <token id="5" value="I-transport"/>
+         <token id="6" value="I-transport"/>
+         <token id="7" value="I-transport"/>
+         <token id="8" value="I-transport"/>
+         <token id="9" value="I-transport"/>
+      </dialogueAct>
+      <frame>
+         <frameElement>
+            <token id="7" value="B-place_name"/>
+            <token id="8" value="I-place_name"/>
+            <token id="9" value="B-date"/>
+         </frameElement>
+         <token id="1" value="B-traffic"/>
+         <token id="2" value="I-traffic"/>
+         <token id="3" value="I-traffic"/>
+         <token id="4" value="I-traffic"/>
+         <token id="5" value="I-traffic"/>
+         <token id="6" value="I-traffic"/>
+         <token id="7" value="I-traffic"/>
+         <token id="8" value="I-traffic"/>
+         <token id="9" value="I-traffic"/>
+      </frame>
+   </semantics>
+</example>
+
+			
+(2) evalution阶段会将XML转换数据集(DataSet)格式
+1) 运行命令：python main.py -n hermit --units 200 --optimizer rmsprop --dropout 0.8 -m testing --run-folder evaluation --train-set "data/datasets/nlu_benchmark_hrc2/KFold_1/trainset" --test-set "data/datasets/nlu_benchmark_hrc2/KFold_1/testset" -g 0
+2) 数据格式
+{
+	"id": "0_a11472",
+	"sentence": "is there any stopped traffic on route eighty today",
+	"index": ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+	"tokens": ["is", "there", "any", "stopped", "traffic", "on", "route", "eighty", "today"],
+	"pos": ["VERB", "ADV", "DET", "VERB", "NOUN", "ADP", "NOUN", "NUM", "NOUN"],
+	"lemma": ["be", "there", "any", "stop", "traffic", "on", "route", "eighty", "today"],
+	"sentence_length": 9,
+	"ner": ["O", "O", "O", "O", "O", "O", "O", "B-CARDINAL", "B-DATE"],
+	"dialogue_act": ["B-transport", "I-transport", "I-transport", "I-transport", "I-transport", "I-transport", "I-transport", "I-transport", "I-transport"],
+	"frame": ["B-traffic", "I-traffic", "I-traffic", "I-traffic", "I-traffic", "I-traffic", "I-traffic", "I-traffic", "I-traffic"],
+	"frame_element": ["O", "O", "O", "O", "O", "O", "B-place_name", "I-place_name", "B-date"]
+}	
+
+(3) 将DataSet数据格式转换为训练样本
+1) train_examples和test_examples，其中包含tokens数组、dialogue_act, frame, frame_element的向量数组
+2) dialogue_act(37), frame(103), frame_element(106)
+3) 训练样本数：9945，测试集样本数：1075
+
+3. 初始化网络
+1) available_networks:
+a. Input
+b. concatenate
+c. hermit
+2) 创建模型：architectures中的hermit方法、
+3) 词嵌入ElmoEmbedding
+a. 使用网络下载的预训练模型elmo.tgz，放置在文件夹内，初始化时指定路径即可通过hub.Module进行模型加载
+
+4. 语法
+(1) LabelEncoder用于对labels进行映射处理
+from sklearn import preprocessing
+label_encoder = preprocessing.LabelEncoder()
+labels = ['LOC', 'ORG', 'DATE', 'TIME']
+label_encoder.fit(labels)	# 映射
+label_encoder.transform(['LOC', 'LOC', 'TIME', 'ORG'])	# 转换为array([1, 1, 3, 2], dtype=int64)
+label_encoder.inverse_transform([0, 0, 1, 3])	# 逆转换为array(['DATE', 'DATE', 'LOC', 'TIME'], dtype='<U4')
+
+(2) pad_sequences，将序列转化为经过填充以后的一个长度相同的新序列新序列
+from keras.preprocessing.sequence import pad_sequences
+pad_sequences([label_encoder.transform(['LOC', 'LOC', 'TIME', 'ORG'])], maxlen=10) # array([[0, 0, 0, 0, 0, 0, 1, 1, 3, 2]])
+
+(3) to_categorical: 将类别向量转换为二进制(只有0和1)的矩阵类型表示，其表现为将原来的类别向量转换为one_hot编码
+from keras.utils.np_utils import to_categorical
+b = [0, 3, 4, 5]
+to_categorical(b, num_classes=10)	# 10为类别个数
+
+(4) ParameterGrid: 输出结果是字典类型，param_grid中参数个数为参数数量相乘
+from sklearn.model_selection import ParameterGrid
+import numpy as np
+pg = {'a': np.arange(0, 3), 'b': np.arange(2, 4)}
+pg = list(ParameterGrid(pg))
+print(pg)	# [{'a': 0, 'b': 2}, {'a': 0, 'b': 3}, {'a': 1, 'b': 2}, {'a': 1, 'b': 3}, {'a': 2, 'b': 2}, {'a': 2, 'b': 3}]
+for i in range(len(pg)):
+    pg[i]['i'] = i
+print(pg)	# [{'a': 0, 'i': 0, 'b': 2}, {'a': 0, 'i': 1, 'b': 3}, {'a': 1, 'i': 2, 'b': 2}, {'a': 1, 'i': 3, 'b': 3}, {'a': 2, 'i': 4, 'b': 2}, {'a': 2, 'i': 5, 'b': 3}]	
+
+(5) inspect：参考https://www.cnblogs.com/linxiyue/p/7989947.html
+
+(6) Input: 用于实例化一个keras张量
+
+(7) numpy.argmax(array, axis)
+返回一个numpy数组中最大值的索引值，当一组中同时出现几个最大值时，返回第一个最大值的索引值
+参考：https://blog.csdn.net/weixin_42755982/article/details/104542538
