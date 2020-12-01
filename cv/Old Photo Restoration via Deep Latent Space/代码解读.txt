@@ -1,0 +1,14 @@
+1. run.py
+(1) 参数：
+a. --input_folder: 测试图像集目录
+b. --output_folder: 处理后的保存目录
+c. --GPU: 指定GPU设备
+d. --checkpoint_name: 检查点名称， 便于在指定的检查点加载模型
+e. --with_scratch: 是否有刮痕
+
+(2) 分为多步骤执行
+1) 阶段1：整体质量提升
+a. 存在刮痕，分两步走：
+i. 先以掩膜来检测刮痕: python detection.py --test_path [input_folder] --output_dir [mask_dir] --input_size full_size --GPU [GPU]
+ii. 再还原刮痕图片质量：python test.py --Scratch_and_Quality_restore -- test_input [new_input] --test_mask [new_mask] --output_dir [output_folder] --gpu_ids [GPU]
+b. 不存在刮痕：执行"python test.py --test_mode full --Quality_restore --test_input [input_folder] --output_folder [output_folder] --gpu_ids [GPU]"
