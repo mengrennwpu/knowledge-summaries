@@ -1,0 +1,118 @@
+常用日期函数
+unix_timestamp:返回当前或指定时间的时间戳	
+select unix_timestamp();
+select unix_timestamp("2020-10-28",'yyyy-MM-dd');
+
+from_unixtime：将时间戳转为日期格式
+select from_unixtime(1603843200);
+
+current_date：当前日期
+select current_date;
+
+current_timestamp：当前的日期加时间
+select current_timestamp;
+
+to_date：抽取日期部分
+select to_date('2020-10-28 12:12:12');
+
+year：获取年
+select year('2020-10-28 12:12:12');
+
+month：获取月
+select month('2020-10-28 12:12:12');
+
+day：获取日
+select day('2020-10-28 12:12:12');
+
+hour：获取时
+select hour('2020-10-28 12:12:12');
+
+minute：获取分
+select minute('2020-10-28 12:12:12');
+
+second：获取秒
+select second('2020-10-28 12:12:12');
+
+weekofyear：当前时间是一年中的第几周
+select weekofyear('2020-10-28 12:12:12');
+
+dayofmonth：当前时间是一个月中的第几天
+select dayofmonth('2020-10-28 12:12:12');
+
+months_between： 两个日期间的月份
+select months_between('2020-04-01','2020-10-28');
+
+add_months：日期加减月
+select add_months('2020-10-28',-3);
+
+datediff：两个日期相差的天数
+select datediff('2020-11-04','2020-10-28');
+
+date_add：日期加天数
+select date_add('2020-10-28',4);
+
+date_sub：日期减天数
+select date_sub('2020-10-28',-4);
+
+last_day：日期的当月的最后一天
+select last_day('2020-02-30');
+
+date_format(): 格式化日期
+select date_format('2020-10-28 12:12:12','yyyy/MM/dd HH:mm:ss');
+
+常用取整函数
+round： 四舍五入
+select round(3.14);
+select round(3.54);
+
+ceil：  向上取整
+select ceil(3.14);
+select ceil(3.54);
+
+floor： 向下取整
+select floor(3.14);
+select floor(3.54);
+
+常用字符串操作函数
+upper： 转大写
+select upper('low');
+
+lower： 转小写
+select lower('low');
+
+length： 长度
+select length("atguigu");
+
+trim：  前后去空格
+select trim(" atguigu ");
+
+lpad： 向左补齐，到指定长度
+select lpad('atguigu',9,'g');
+
+rpad：  向右补齐，到指定长度
+select rpad('atguigu',9,'g');
+
+regexp_replace：使用正则表达式匹配目标字符串，匹配成功后替换！
+SELECT regexp_replace('2020/10/25', '/', '-');
+
+集合操作
+size： 集合中元素的个数
+select size(friends) from test3;
+
+map_keys： 返回map中的key
+select map_keys(children) from test3;
+
+map_values: 返回map中的value
+select map_values(children) from test3;
+
+array_contains: 判断array中是否包含某个元素
+select array_contains(friends,'bingbing') from test3;
+
+sort_array： 将array中的元素排序
+select sort_array(friends) from test3;
+
+grouping_set:多维分析
+
+
+
+
