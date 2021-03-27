@@ -1,0 +1,2 @@
+1. HBase关于Versions和Timestamp: https://blog.csdn.net/yulin_Hu/article/details/81673331
+2. HBase的架构原理：https://www.jianshu.com/p/9d3d388eae19?utm_source=oschina-app
